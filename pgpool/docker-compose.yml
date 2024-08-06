@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer:1.18.0
+    restart: always
+    ports:
+      - "6432:6432"
+    environment:
+      DATABASES: "postgresql://user:password@postgres_primary:5432/postgres"
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ../userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      - postgres_net
+
+  pgpool:
+    image: bitnami/pgpool:4.5.2
+    ports:
+      - "5436:5432"
+    environment:
+      - PGPOOL_LISTEN_ADDRESS='*'
+      - PGPOOL_ADMIN_USERNAME=pgpool_admin
+      - PGPOOL_ADMIN_PASSWORD=pgpool_admin_password
+      - PGPOOL_POSTGRES_USERNAME=user
+      - PGPOOL_POSTGRES_PASSWORD=password
+      - PGPOOL_SR_CHECK_USER=user
+      - PGPOOL_SR_CHECK_PASSWORD=password
+      - PGPOOL_BACKEND_NODES=0:postgres_primary:5432,1:postgres_replica1:5432,2:postgres_replica2:5432
+      - PGPOOL_ENABLE_LOAD_BALANCING=yes
+      - PGPOOL_ENABLE_STATEMENT_LOAD_BALANCING=yes
+      - PGPOOL_USER_CONF_FILE=/config/extra.conf
+    volumes:
+      - ./extra.conf:/config/extra.conf
+    networks:
+      - postgres_net
+
+networks:
+  postgres_net:
+    external: true

@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer:1.18.0
+    restart: always
+    ports:
+      - "6432:6432"
+    environment:
+      DATABASES: "postgresql://user:password@postgres_primary:5432/postgres"
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ../userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      - postgres_net
+
+  haproxy:
+    image: haproxy:3.0.3-alpine
+    restart: always
+    ports:
+      - "5436:5436"  # For write requests
+      - "5437:5437"  # For read requests
+      - "8404:8404"  # For HAProxy stats
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - postgres_net
+
+networks:
+  postgres_net:
+    external: true
